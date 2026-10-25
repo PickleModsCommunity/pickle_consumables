@@ -64,7 +64,7 @@ end
 
 CreateThread(function()
     Wait(100)
-    if not UsableItem then 
+    if not RegisterUsableItem then
         RegisterUsableItem = function(name, cb)
             ESX.RegisterUsableItem(name, function(source, item, data) 
 		if not data then data = {} end

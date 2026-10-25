@@ -32,6 +32,10 @@ end
 
 function ConsumeItem(name)
     if PerformingAction then return end
+    local held=ItemData
+    if not held then return end
+    if not lib.callback.await('pickle_consumables:beginUse',false,held.generation) then return end
+    if ItemData~=held then return end
     PerformingAction = "consume"
     local cfg = Config.Items[name]
     local anim = cfg.animation
@@ -58,10 +62,12 @@ function ConsumeItem(name)
         })
         ClearPedTasks(ped)
         if timeLeft > 0 and anim.time - timeLeft <= 100 then
+            TriggerServerEvent("pickle_consumables:cancelUse",held.generation)
             OptionsMenu()
             PerformingAction = nil
         elseif timeLeft <= 0 then
             lib.callback("pickle_consumables:useItem", "", function(result, uses)
+                if ItemData~=held or not result or type(uses)~='number' then PerformingAction=nil; return end
                 if result and Config.Effects[cfg.effect?.name or ""] then
                     CreateThread(function()
                         if ProcessingEffect and not Config.Effects[cfg.effect.name].canOverlap then return end
@@ -80,8 +86,9 @@ function ConsumeItem(name)
                     data = { quantity = uses, time = cfg.animation.time }
                 })
                 PerformingAction = nil
-            end)
+            end,held.generation)
         else
+            TriggerServerEvent("pickle_consumables:cancelUse",held.generation)
             PerformingAction = nil
         end
     end)
@@ -112,11 +119,10 @@ function ItemThread(name, metadata)
     CreateThread(function()
         local pressTime = 0
         local holding = false
-        while EquippedItem == name do
+        while EquippedItem == name and ItemData==metadata do
             local ped = PlayerPedId()
             if IsControlJustPressed(1, 45) then
                 TriggerServerEvent("pickle_consumables:returnItem")
-                RemoveItem()
             elseif IsControlPressed(1, 191) or IsControlPressed(1, 51) then
                 if not PerformingAction then
                     ConsumeItem(name)
@@ -161,6 +167,26 @@ end)
 
 AddEventHandler("onResourceStop", function(name)
     if name ~= GetCurrentResourceName() then return end
+    RemoveItem()
+    local ped=PlayerPedId()
+    ClearTimecycleModifier()
+    StopGameplayCamShaking(true)
+    SetPedIsDrunk(ped,false)
+    SetPedMotionBlur(ped,false)
+    ResetPedMovementClipset(ped,0.0)
+    SetRunSprintMultiplierForPlayer(PlayerId(),1.0)
     TransitionFromBlurred(0)
     RemoveAttachedProp()
+end)
+RegisterNetEvent('pickle_consumables:restoreItem',function(item)
+    if ItemData and ItemData.generation==item.generation then AttachProp(item.itemKey); return end
+    RemoveItem()
+    ItemThread(item.itemKey,item)
+end)
+CreateThread(function()
+    while true do
+        Wait(5000)
+        TriggerServerEvent('pickle_consumables:initialize')
+        TriggerServerEvent('pickle_consumables:drop:snapshot')
+    end
 end)

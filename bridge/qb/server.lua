@@ -69,7 +69,7 @@ end
 CreateThread(function()
     Wait(100)
     
-    if not UsableItem then 
+    if not RegisterUsableItem then
         function RegisterUsableItem(name, cb)
             QBCore.Functions.CreateUseableItem(name, function(source, data)
                 local item = data
@@ -115,12 +115,14 @@ CreateThread(function()
 
     Inventory.AddItem = function(source, name, count, metadata, slot) -- Metadata is not required.
         local xPlayer = QBCore.Functions.GetPlayer(source)
-        xPlayer.Functions.AddItem(name, count, slot, metadata)
+        if not xPlayer then return false end
+        return xPlayer.Functions.AddItem(name, count, slot, metadata)
     end
 
     Inventory.RemoveItem = function(source, name, count, slot)
         local xPlayer = QBCore.Functions.GetPlayer(source)
-        xPlayer.Functions.RemoveItem(name, count, slot)
+        if not xPlayer then return false end
+        return xPlayer.Functions.RemoveItem(name, count, slot)
     end
     
     Inventory.SetMetadata = function(source, slot, metadata)

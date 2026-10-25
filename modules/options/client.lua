@@ -99,7 +99,7 @@ function CreateThrowable(model, attach)
     local ped = PlayerPedId()
     local heading = GetEntityHeading(ped)
     local coords = GetOffsetFromEntityInWorldCoords(ped, 0.0, 1.0, 0.5)
-    local prop = CreateProp(model, coords.x, coords.y, coords.z, true, true, true)
+    local prop = CreateProp(model, coords.x, coords.y, coords.z, false, false, true)
     if not prop then return end
     if attach then 
         local off, rot = vector3(0.05, 0.0, -0.085), vector3(90.0, 90.0, 0.0)
@@ -128,7 +128,12 @@ function ThrowItem()
     DetachEntity(prop, false, true)
     SetEntityCollision(prop, true, true)
     SetEntityRecordsCollisions(prop, true)
-    TriggerServerEvent("pickle_consumables:throwing:throwObject", {net_id = ObjToNet(prop)})
+    local key=tostring(prop)
+    Throwables[key]={entity=prop}
+    SetTimeout(1000*Config.Options.throwing.despawnTime,function()
+        if DoesEntityExist(prop) then DeleteEntity(prop) end
+        Throwables[key]=nil
+    end)
     local coords = GetOffsetFromEntityInWorldCoords(ped, 0.0, 0.0, 1.0)
     SetEntityCoords(prop, coords.x, coords.y, coords.z)
     SetEntityHeading(prop, GetEntityHeading(ped) + 90.0)
@@ -164,7 +169,7 @@ function PlaceProp(model, cb)
         while PlacingProp do
             ShowInteractText(_L("interact_place"))
             local hit, hitCoords, entity = GetDirectionCoords()
-            if hit and hitCoords then 
+            if hit and hitCoords and #(hitCoords-GetEntityCoords(PlayerPedId()))<=3.0 then
                 coords = vector3(hitCoords.x, hitCoords.y, hitCoords.z + 0.04)
                 heading = GetGameplayCamRot(2).z
                 SetEntityCoords(prop, coords.x, coords.y, coords.z)
@@ -224,6 +229,6 @@ end)
 AddEventHandler("onResourceStop", function(name) 
     if (GetCurrentResourceName() ~= name) then return end
     for k,v in pairs(Throwables) do 
-        DeleteEntity(NetToObj(v.net_id))
+        if v.entity and DoesEntityExist(v.entity) then DeleteEntity(v.entity) end
     end
 end)
