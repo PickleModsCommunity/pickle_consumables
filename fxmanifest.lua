@@ -3,7 +3,7 @@ lua54 'yes'
 game 'gta5'
 
 name         'pickle_consumables'
-version      '1.0.3'
+version      '1.0.4'
 description  'A free alternative for consumable items.'
 author       'Pickle Mods'
 
