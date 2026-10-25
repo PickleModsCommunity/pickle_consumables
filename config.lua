@@ -127,6 +127,12 @@ Config.MaxValues = { -- If you want a custom maximum for a value, change -1 to t
 }
 
 Config.Items = {
+    ['water'] = {
+        uses=3,
+        prop={model=`prop_ld_flow_bottle`,boneId=28422,offset=vec3(0.0,0.0,0.0),rotation=vec3(0.0,0.0,0.0)},
+        animation={dict='mp_player_intdrink',anim='loop_bottle',time=2000,params={1.0,-1.0,-1,49}},
+        status={thirst=20},
+    },
     ["cigarette"] = {
         uses = 3,
         prop = { model = `prop_cigar_03`, boneId = 28422, offset = vec3(-0.05, 0.0, 0.0), rotation = vec3(0.0, 0.0, 0.0) },

@@ -27,11 +27,17 @@ Inventory.GetInventory = function(source)
 end
 
 Inventory.AddItem = function(source, name, count, metadata, slot) -- Metadata is not required.
+    if not Inventory.CanCarryItem(source,name,count) then return false end
+    local before=Inventory.GetItemCount(source,name)
     exports['qs-inventory']:AddItem(source, name, count, slot, metadata)
+    return Inventory.GetItemCount(source,name)==before+count
 end
 
 Inventory.RemoveItem = function(source, name, count, slot)
+    local before=Inventory.GetItemCount(source,name)
+    if before<count then return false end
     exports['qs-inventory']:RemoveItem(source, name, count, slot)
+    return Inventory.GetItemCount(source,name)==before-count
 end
 
 Inventory.SetMetadata = function(source, slot, metadata)
@@ -55,13 +61,13 @@ function InitializeInventory()
 end
 
 if Framework == "ESX" then
-    function UsableItem(name, cb)
+    function RegisterUsableItem(name, cb)
         ESX.RegisterUsableItem(name, function(source, item, data) 
             cb(source, data.metadata, data.slot)
         end)
     end
 elseif Framework == "QB" or Framework == "QBOX" then
-    function UsableItem(name, cb)
+    function RegisterUsableItem(name, cb)
         QBCore.Functions.CreateUseableItem(name, function(source, data)
             local item = data
             if item.info then
